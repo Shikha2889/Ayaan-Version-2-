@@ -6,8 +6,8 @@ var hotel, hotel_image
 var isTeleported = false
 var addAccessToBasement = false
 var reception, reception_bg
-var key, lockpick, guestbook
-var noteImg
+var lockkey_1, lockpick, guestbook
+var noteImg, text1
 var hiddenRoom, hiddenRoom_image
 var startButton
 var endOfReception
@@ -15,8 +15,10 @@ var basement, basement_image
 var lockpick
 var startButton_image
 
-var gameState = "Start"
+var gameState = "Splash"
 var isVideoPlaying = false;
+var mystery_image
+var isUnlocked = false;
 
 
 function preload() {
@@ -44,21 +46,22 @@ function preload() {
   noteImg = loadImage('../assets/paper_bg.png')
   hiddenRoom_image = loadImage('../assets/room_selection.jpg')
   hotel_room = loadImage('../assets/hotel_room.jpg')
-  splashImg = createImg('../assets/Adventure Games.gif')
+  // splashImg = createImg('../assets/Adventure Games.gif')
   basement_image = loadImage('../assets/basement.jpeg')
-  
+  mystery_image = loadImage('../assets/Mystery.png')
+  txt1_image = loadImage('../assets/txt1.png')
+  guestbook_image = loadImage('../assets/guestbook.png')
+
 }
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
+  console.log(width, height)
 
- /* vidElement = createVideo("../assets/AdventureGames.mp4");
-  vidElement.position(0, 0); // Set the position to (0, 0) to start from the top-left corner
-  vidElement.size(windowWidth, windowHeight); // Set the size to match the window dimensions
-  vidElement.play() */
-  
-  
- 
+  /* vidElement = createVideo("../assets/AdventureGames.mp4");
+   vidElement.position(0, 0); // Set the position to (0, 0) to start from the top-left corner
+   vidElement.size(windowWidth, windowHeight); // Set the size to match the window dimensions
+   vidElement.play() */
   boy = createSprite(50, 400, 30, 30)
   boy.addImage("standingR", boyStandingRight)
   boy.addAnimation("walkingR", boyWalkingRight)
@@ -68,18 +71,18 @@ function setup() {
 
   button = createButton('Rules');
   button.position(20, 20);
-  button.mousePressed(changeBG);
+  //button.mousePressed(changeBG);
   button.size(100, 50)
 
   closeButton = createButton('Close Rules');
   closeButton.position(20, 85);
-  closeButton.mousePressed(closeRules);
+  //closeButton.mousePressed(closeRules);
   closeButton.size(100, 50)
   closeButton.hide();
 
-  //startButton = createImg('../assets/startButtonImg.png')
-  //startButton.position(width/2- 200,height/2+ 200);
-  //startButton.size(400,100)
+  startButton = createImg('../assets/startbtn.png')
+  startButton.position(width / 2 - 200, height / 2 + 100);
+  startButton.size(400, 200)
   //startButton.mouseClicked(changeState)
 
   paper = createSprite(width / 2, height / 2, 30, 30)
@@ -89,200 +92,184 @@ function setup() {
   hotel = createSprite(width - 100, height / 2, 50, 50)
   hotel.addImage("hotel", hotel_image)
   hotel.scale = 0.3
+  hotel.debug = true
+  hotel.setCollider('rectangle', -130, 0, 500, 500)
 
   reception = createSprite(width / 2, height / 2, 30, 30)
+  reception.shapeColor = "green"
+  reception.visible = false
 
-  key = createSprite(width / 2, height / 2, 20, 20)
-  key.addImage("key", keyImg)
-  key.visible = false
-  key.scale = 0.03
-  console.log(key.x)
 
   guestbook = createSprite(width / 2 + 100, height / 2, 20, 20)
   guestbook.visible = false
+  guestbook.addImage("guestbook", guestbook_image)
+  guestbook.scale = 0.5
+  guestbook.debug = true
+  guestbook.setCollider("rectangle", 0, 0, 30, 30)
 
   hiddenRoom = createSprite(width - 100, height / 2, 20, 20)
   hiddenRoom.visible = false
   hiddenRoom.addImage(hiddenRoom_image)
 
-  lockpick = createSprite(300, height/2 + 110, 20, 20)
+  lockpick = createSprite(300, height / 2 + 110, 20, 20)
+  lockpick.visible = false
 
-  endOfReception = createSprite(width, height/2, 20, 120)
+  endOfReception = createSprite(width, height / 2, 20, 120)
   endOfReception.shapeColor = 'brown'
 
   basement = createSprite(endOfReception.x, endOfReception.y, 40, 40)
   basement.addImage("basement", basement_image)
   basement.visible = false
 
+  text1 = createSprite(width / 2, height / 2, 40, 40)
+  text1.visible = false
+  text1.addImage("text1", txt1_image)
+
+
+  // Create key
+  lockkey_1 = createSprite(random(width), random(height), 20, 20);
+  lockkey_1.shapeColor = "yellow";
+  lockkey_1.addImage("lockkey1", keyImg)
+  lockkey_1.scale = 0.005
+  lockkey_1.debug = true
+
   drawSprites();
 }
 
 function draw() {
-  if(gameState=="Start") {
-    splashImg.position(50, 50)
-    
+  background("yellow")
+
+  if (gameState == "Splash") {
+    SplashScreen()
   }
-  
-  
-  if (!isTeleported && gameState == "Play") {
-    background(bgImg);
-    reception.visible = false;
-    lockpick.visible = false;
-    key.visible = true
-    console.log(key.x)
+  else if (gameState == "Forest") {
+    ForestScreen()
+  }
+  else if (gameState == "Reception") {
+    ReceptionScreen()
+  }
+  else if (gameState == "Room_Selection") {
+    RoomSelectionScreen()
+  }
+  else if (gameState == "Room") {
+    HotelRoomScreen()
+  }
+  else if (gameState == "BaseMent") {
+    BaseMentScreen()
+  }
+
+  // Move the boy left and right
+  if (keyDown('d')) {
+    boy.changeAnimation("walkingR", boyWalkingRight)
+    boy.x = boy.x + 7
+    boy.scale = 1
+  }
+  if (keyDown('a')) {
+    boy.changeAnimation("walkingL", boyWalkingLeft)
+    boy.x = boy.x - 7
+    boy.scale = 0.15
+  }
+  if (keyDown('w')) {
+    boy.changeAnimation("walkingL", boyWalkingLeft)
+    boy.y = boy.y - 7
+    boy.scale = 0.15
+  }
+  if (keyDown('s')) {
+    boy.changeAnimation("walkingL", boyWalkingLeft)
+    boy.y = boy.y + 7
+    boy.scale = 0.15
+  }
+
+  drawSprites()
+}
+
+function SplashScreen() {
+  background(mystery_image)
+  // Hide the boy and hotel sprites
+  boy.visible = false;
+  hotel.visible = false;
+  startButton.mouseClicked(function () {
+    gameState = "Forest"
     startButton.hide()
-    
-    if (keyDown('d')) {
-      boy.changeAnimation("walkingR", boyWalkingRight)
-      boy.x = boy.x + 7
-      boy.scale = 1
-    }
-    if (keyDown('a')) {
-      boy.changeAnimation("walkingL", boyWalkingLeft)
-      boy.x = boy.x - 7
-      boy.scale = 0.15
-    }
-    if (boy.isTouching(hotel)) {
-      teleportToHotel()
-    }
-    drawSprites();
-  }
-  else if(isTeleported && gameState=="Play"){
-    background(reception_bg);
-    if (keyDown('d')) {
-      boy.changeAnimation("walkingR", boyWalkingRight)
-      boy.x = boy.x + 7
-      boy.scale = 2
-    }
-    if (keyDown('a')) {
-      boy.changeAnimation("walkingL", boyWalkingLeft)
-      boy.x = boy.x - 7
-      boy.scale = 0.3
-    }
+  })
 
-    if (boy.overlap(guestbook)) {
-      showNote()
-    }
-
-    if(boy.isTouching(endOfReception)){
-      gameState = "room"
-      endOfReception.destroy()
-      key.visible = false
-      background(hotel_room);
-      if (keyDown('d')) {
-        boy.changeAnimation("walkingR", boyWalkingRight)
-        boy.x = boy.x + 7
-        boy.scale = 2
-      }
-      if (keyDown('a')) {
-        boy.changeAnimation("walkingL", boyWalkingLeft)
-        boy.x = boy.x - 7
-        boy.scale = 0.3
-      }
-    }
-    drawSprites();
-  }
-  else if (boy.isTouching(endOfReception)) {
-    console.log("hiddenroom")
-    openHiddenRoom(hiddenRoom_image);
-    background();
-    if (keyDown('d')) {
-      boy.changeAnimation("walkingR", boyWalkingRight)
-      boy.x = boy.x + 7
-      boy.scale = 2
-    }
-    if (keyDown('a')) {
-      boy.changeAnimation("walkingL", boyWalkingLeft)
-      boy.x = boy.x - 7
-      boy.scale = 0.3
-    }
-  }
-  else if (boy.isTouching(lockpick) && gameState==="Play" && boy.isTouching(basement)) {
-    background(basement_image);
-    if (keyDown('d')) {
-      boy.changeAnimation("walkingR", boyWalkingRight)
-      boy.x = boy.x + 7
-      boy.scale = 2
-    }
-    if (keyDown('a')) {
-      boy.changeAnimation("walkingL", boyWalkingLeft)
-      boy.x = boy.x - 7
-      boy.scale = 0.3
-    }
-  }
+  drawSprites()
 }
 
-function changeBG() {
-  paper.visible = true
-  closeButton.show()
+function ForestScreen() {
+  background(bgImg)
+  // Hide the boy and hotel sprites
+  boy.visible = true;
+  hotel.visible = true;
+  if (boy.overlap(hotel)) {
+    gameState = "Reception";
+  }
+  drawSprites()
 }
 
-function changeState() {
-  gameState = "Play"
-  console.log(gameState)
-  startButton.hide()
-  splashImg.hide()
-}
-
-function teleportToHotel() {
-  isTeleported = true
-  boy.x = 100
-  boy.y = height / 2 + 100
-  boy.scale = 2
+function ReceptionScreen() {
+  background(reception_bg)
   hotel.visible = false
-  hotel.x = width - 100
-  hotel.y = height - 100
-  hotel.scale = 0.3
-}
+  boy.visible = true;
+  lockkey_1.visible = true;
+  guestbook.visible = true
 
-function closeRules() {
-  paper.visible = false
-}
 
-function showNote() {
-  console.log(key.x)
-  var note = createSprite(width / 2, height / 2, 20, 20)
-  note.visible = true
-  note.addImage('note', noteImg)
-  note.scale = 1
-  note.x = width / 2-200 
-  note.y = height / 2 - 100
-  guestbook.visible = false
-  var message = "Hello Adventurer! Take the key and walk towards your right hand side!"
-  var dialogueBox = createDiv(message)
-  dialogueBox.addClass("dialogue")
 
-  setTimeout(function () {
-    note.visible = false
-    key.visible = true
-    console.log(key.x)
-    
-  }, 1000)
-}
+  if (boy.overlap(guestbook)) {
+    lockkey_1.visible = true
+    text1.visible = true
+    boy.x = width / 2 + 400
 
-function openHiddenRoom() {
-  key.visible = false
-  hiddenRoom.visible = true
-}
-
-function findLockpick(){
-  if (boy.isTouching(lockpick)){
-    boy.addAccessToBasement = true
+    setTimeout(function () {
+      text1.visible = false
+    }, 2000)
   }
-}
 
-function basement(){
-  if(addAccessToBasement === true){
-    bossFight();
+  // Check if player collects the key
+  if (boy.overlap(lockkey_1)) {
+    console.log("key collected")
+    lockkey_1.visible = false
+    setTimeout(function () {
+       lockkey_1.remove()
+    }, 1000)
+
+    isUnlocked = true;
   }
+
+  // Check if player unlocks the room
+  if (isUnlocked && boy.overlap(endOfReception)) {
+    gameState = "Room_Selection";
+  }
+
+
+
+  if (!isUnlocked && boy.overlap(endOfReception)) {
+    dialogue("You dont have the key !!! ")
+  }
+
+
+
+
+
+
+  drawSprites();
+
 }
 
-function bossFight(){
-  //get the code from epic archery
+function RoomSelectionScreen() {
+  background()
 }
 
-/*function startgame(){
-  vidElement.show();
-  vidElement.play(); // Play the video
-}*/
+function HotelRoomScreen() {
+}
+
+function BaseMentScreen() {
+}
+
+
+function dialogue(text) {
+  console.log(text);
+}
+
 
